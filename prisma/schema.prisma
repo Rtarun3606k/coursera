@@ -221,6 +221,7 @@ model Provider {
   logo        String?
   website     String?
   type        ProviderType @default(UNIVERSITY)
+  provider    Boolean      @default(false)
 
   // Contact Information
   email   String?
@@ -357,6 +358,7 @@ model User {
   emailVerified DateTime?
   image         String?
   role          String    @default("user")
+  provider      Boolean   @default(false)
 
   // Instructor Details
   bio         String?
