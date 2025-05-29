@@ -7,22 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  role          String    @default("user")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  accounts Account[]
-  sessions Session[]
-
-  @@map("users")
-}
-
 model Account {
   id                String  @id @default(auto()) @map("_id") @db.ObjectId
   userId            String  @db.ObjectId
@@ -62,4 +46,386 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+model Course {
+  id               String  @id @default(auto()) @map("_id") @db.ObjectId
+  title            String
+  description      String?
+  shortDescription String?
+  thumbnail        String?
+  bannerImage      String?
+
+  // Content Organization
+  unitIds       String[] @db.ObjectId
+  categoryId    String   @db.ObjectId
+  subcategoryId String?  @db.ObjectId
+  tags          String[]
+
+  // Provider/Organization Details
+  providerId    String   @db.ObjectId
+  providerName  String
+  providerLogo  String?
+  instructorIds String[] @db.ObjectId
+
+  // Course Details
+  level          CourseLevel @default(BEGINNER)
+  language       String      @default("English")
+  duration       Int?
+  estimatedWeeks Int?
+
+  // Pricing & Access
+  price         Float      @default(0)
+  currency      String     @default("USD")
+  isFreeTrial   Boolean    @default(false)
+  trialDuration Int?
+  accessType    AccessType @default(PAID)
+
+  // Registration & Statistics
+  registeredCount Int   @default(0)
+  maxEnrollments  Int?
+  completionRate  Float @default(0)
+  averageRating   Float @default(0)
+  totalReviews    Int   @default(0)
+
+  // Status & Visibility
+  status      CourseStatus @default(DRAFT)
+  isPublished Boolean      @default(false)
+  publishedAt DateTime?
+
+  // Dates
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  startDate DateTime?
+  endDate   DateTime?
+
+  // Requirements & Outcomes
+  prerequisites    String[]
+  learningOutcomes String[]
+  requirements     String[]
+
+  // Additional Features
+  hasCertificate   Boolean  @default(false)
+  certificateType  String?
+  hasSubtitles     Boolean  @default(false)
+  supportedDevices String[]
+
+  // SEO & Marketing
+  slug            String   @unique
+  metaTitle       String?
+  metaDescription String?
+  keywords        String[]
+
+  // Relations
+  category    Category     @relation(fields: [categoryId], references: [id])
+  subcategory Category?    @relation("Subcategory", fields: [subcategoryId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  provider    Provider     @relation(fields: [providerId], references: [id])
+  units       Unit[]
+  enrollments Enrollment[]
+  reviews     Review[]
+
+  @@index([categoryId])
+  @@index([providerId])
+  @@index([status, isPublished])
+  @@index([averageRating])
+  @@index([registeredCount])
+  @@map("courses")
+}
+
+model Unit {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  courseId    String  @db.ObjectId
+  order       Int
+
+  // Content
+  lessonIds String[] @db.ObjectId
+  duration  Int?
+
+  // Access Control
+  isPreview  Boolean @default(false)
+  isRequired Boolean @default(true)
+
+  // Dates
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@index([courseId, order])
+  @@map("units")
+}
+
+model Lesson {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  unitId      String  @db.ObjectId
+  order       Int
+
+  // Content Details
+  type           LessonType @default(VIDEO)
+  videoUrl       String?
+  videoThumbnail String?
+  videoDuration  Int?
+  textContent    String?
+  attachments    String[]
+
+  // Access Control
+  isPreview  Boolean @default(false)
+  isRequired Boolean @default(true)
+
+  // Dates
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  unit     Unit       @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  progress Progress[]
+
+  @@index([unitId, order])
+  @@map("lessons")
+}
+
+model Category {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  icon        String?
+  parentId    String? @db.ObjectId
+  slug        String  @unique
+  isActive    Boolean @default(true)
+  order       Int     @default(0)
+
+  // Dates
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  parent             Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children           Category[] @relation("CategoryHierarchy")
+  courses            Course[]
+  subcategoryCourses Course[]   @relation("Subcategory")
+
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Provider {
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String?
+  logo        String?
+  website     String?
+  type        ProviderType @default(UNIVERSITY)
+
+  // Contact Information
+  email   String?
+  phone   String?
+  address String?
+  country String?
+
+  // Statistics
+  totalCourses  Int   @default(0)
+  totalStudents Int   @default(0)
+  averageRating Float @default(0)
+
+  // Status
+  isVerified Boolean @default(false)
+  isActive   Boolean @default(true)
+
+  // Dates
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  courses Course[]
+
+  @@index([type])
+  @@index([isVerified, isActive])
+  @@map("providers")
+}
+
+model Enrollment {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String @db.ObjectId
+  courseId String @db.ObjectId
+
+  // Enrollment Details
+  status         EnrollmentStatus @default(ACTIVE)
+  enrolledAt     DateTime         @default(now())
+  completedAt    DateTime?
+  lastAccessedAt DateTime?
+
+  // Progress Tracking
+  progressPercentage Float @default(0)
+  timeSpent          Int   @default(0)
+
+  // Payment Information
+  amount        Float?
+  paymentMethod String?
+  transactionId String?
+
+  // Certificate
+  certificateIssued   Boolean   @default(false)
+  certificateUrl      String?
+  certificateIssuedAt DateTime?
+
+  // Dates
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course   Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progress Progress[]
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([status])
+  @@map("enrollments")
+}
+
+model Progress {
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  enrollmentId String @db.ObjectId
+  lessonId     String @db.ObjectId
+
+  // Progress Details
+  isCompleted  Boolean   @default(false)
+  watchTime    Int       @default(0)
+  lastPosition Int       @default(0)
+  completedAt  DateTime?
+
+  // Dates
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, lessonId])
+  @@index([enrollmentId])
+  @@index([lessonId])
+  @@map("progress")
+}
+
+model Review {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String @db.ObjectId
+  courseId String @db.ObjectId
+
+  // Review Details
+  rating  Int
+  title   String?
+  comment String?
+
+  // Moderation
+  isApproved  Boolean   @default(false)
+  isReported  Boolean   @default(false)
+  moderatedBy String?   @db.ObjectId
+  moderatedAt DateTime?
+
+  // Helpful votes
+  helpfulVotes Int @default(0)
+  totalVotes   Int @default(0)
+
+  // Dates
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([courseId])
+  @@index([rating])
+  @@index([isApproved])
+  @@map("reviews")
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          String    @default("user")
+
+  // Instructor Details
+  bio         String?
+  expertise   String[]
+  experience  String?
+  linkedinUrl String?
+  twitterUrl  String?
+  websiteUrl  String?
+
+  // Statistics
+  totalStudents Int   @default(0)
+  totalCourses  Int   @default(0)
+  averageRating Float @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  enrollments Enrollment[]
+  reviews     Review[]
+
+  @@map("users")
+}
+
+// Enums
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  ALL_LEVELS
+}
+
+enum AccessType {
+  FREE
+  PAID
+  FREEMIUM
+  SUBSCRIPTION
+}
+
+enum CourseStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+  SUSPENDED
+}
+
+enum LessonType {
+  VIDEO
+  TEXT
+  QUIZ
+  ASSIGNMENT
+  DISCUSSION
+  LIVE_SESSION
+}
+
+enum ProviderType {
+  UNIVERSITY
+  COMPANY
+  INDIVIDUAL
+  BOOTCAMP
+  CERTIFICATION_BODY
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  DROPPED
+  SUSPENDED
+  REFUNDED
 }

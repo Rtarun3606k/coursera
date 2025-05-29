@@ -10,7 +10,10 @@ export default auth((req) => {
       // Redirect to login if not authenticated
       return NextResponse.redirect(new URL("/login", req.url));
     }
-    if (req.auth.user?.role !== "admin") {
+  }
+
+  if (pathname.startsWith("/admin")) {
+    if (req.auth && req.auth.user?.role !== "admin") {
       return NextResponse.redirect(new URL("/unauthorized", req.url));
     }
   }
