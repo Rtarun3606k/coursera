@@ -1,38 +1,31 @@
 import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
+import GoogleProvider from "next-auth/providers/google";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { PrismaClient } from "@prisma/client";
 
-// Define admin emails - you can move this to environment variables
-const ADMIN_EMAILS = [
-  "r.tarunnayaka25042005@gmail.com", // Your email
-  // Add other admin emails here
-];
+const prisma = new PrismaClient();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  session: {
+    strategy: "database",
+  },
   providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    GoogleProvider({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        // Check if user is admin
-        token.isAdmin = ADMIN_EMAILS.includes(user.email);
-        token.role = ADMIN_EMAILS.includes(user.email) ? "admin" : "user";
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      session.user.id = token.id;
-      session.user.isAdmin = token.isAdmin;
-      session.user.role = token.role;
+    async session({ session, user }) {
+      session.user.role = user.role || "user";
+      session.user.id = user.id;
       return session;
     },
   },
   pages: {
-    signIn: "/auth/signin",
-    error: "/auth/error",
+    signIn: "/login",
   },
 });
+
+export const { GET, POST } = handlers;

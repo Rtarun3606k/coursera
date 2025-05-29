@@ -4,17 +4,11 @@ import { NextResponse } from "next/server";
 export default auth((req) => {
   const { pathname } = req.nextUrl;
 
-  // Admin route protection
-  if (pathname.startsWith("/admin")) {
+  // Protected route for dashboard
+  if (pathname.startsWith("/dashboard")) {
     if (!req.auth) {
       // Redirect to login if not authenticated
       return NextResponse.redirect(new URL("/login", req.url));
-    }
-
-    // Check if user is admin
-    if (!req.auth.user?.isAdmin) {
-      // Redirect to unauthorized if not admin
-      return NextResponse.redirect(new URL("/unauthorized", req.url));
     }
   }
 
@@ -22,5 +16,5 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/dashboard/:path*", "/settings/:path*"],
 };

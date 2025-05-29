@@ -5,15 +5,12 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { ModeToggle } from "./ThemeSwitch";
 import SignIn from "./Sigin";
-import { auth } from "../auth";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import { useAdmin } from "../hooks/useAdmin";
 
 const NavBar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { data: session, status } = useSession();
-  const { isAdmin } = useAdmin();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -56,14 +53,6 @@ const NavBar = () => {
           >
             Contact
           </Link>
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className="text-foreground hover:text-primary transition-colors font-medium"
-            >
-              Admin
-            </Link>
-          )}
         </div>
 
         {/* Right section with theme toggle and auth */}
@@ -129,15 +118,6 @@ const NavBar = () => {
             >
               Contact
             </Link>
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className="text-foreground hover:text-primary transition-colors py-2 font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Admin
-              </Link>
-            )}
             <div className=" flex-col items-center gap-2.5">
               <div className="flex items-center gap-2.5 mb-2.5">
                 {/* {console.log(session.user)} */}
