@@ -357,7 +357,7 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  role          String    @default("user")
+  role          Role      @default(USER)
   provider      Boolean   @default(false)
 
   // Instructor Details
@@ -430,4 +430,10 @@ enum EnrollmentStatus {
   DROPPED
   SUSPENDED
   REFUNDED
+}
+
+enum Role {
+  USER
+  ADMIN
+  PROVIDER
 }
