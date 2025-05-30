@@ -221,7 +221,6 @@ model Provider {
   logo        String?
   website     String?
   type        ProviderType @default(UNIVERSITY)
-  provider    Boolean      @default(false)
 
   // Contact Information
   email   String?
