@@ -7,6 +7,11 @@ const nextConfig = {
         hostname: "lh3.googleusercontent.com",
         pathname: "**",
       },
+      {
+        protocol: "https",
+        hostname: "walkez.blob.core.windows.net",
+        pathname: "**",
+      },
     ],
   },
 };

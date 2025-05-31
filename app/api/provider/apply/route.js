@@ -43,7 +43,9 @@ async function handelApplication(req) {
       },
     });
 
-    if (existingProvider) {
+    // console.log("Existing provider check:", existingProvider);
+
+    if (existingProvider && existingProvider.isVerified === true) {
       return NextResponse.json(
         {
           error: "Provider application with this email already exists",
@@ -128,4 +130,61 @@ async function handelApplication(req) {
   }
 }
 
+async function handelApplicationGet(req, {}) {
+  try {
+    const { searchParams } = new URL(req.url);
+    if (!searchParams.has("email")) {
+      return NextResponse.json(
+        { error: "Email parameter is required" },
+        { status: 400 }
+      );
+    }
+
+    const email = searchParams.get("email");
+
+    const providerApplication = await PrismaConnection.provider.findFirst({
+      where: {
+        email: email,
+      },
+    });
+
+    if (!providerApplication) {
+      return NextResponse.json(
+        { error: "No application found for this email" },
+        { status: 404 }
+      );
+    }
+
+    // Return the provider application data
+    return NextResponse.json(
+      {
+        success: true,
+        provider: {
+          id: providerApplication.id,
+          name: providerApplication.name,
+          description: providerApplication.description,
+          logo: providerApplication.logo,
+          website: providerApplication.website,
+          type: providerApplication.type,
+          email: providerApplication.email,
+          phone: providerApplication.phone,
+          address: providerApplication.address,
+          country: providerApplication.country,
+          isVerified: providerApplication.isVerified,
+          isActive: providerApplication.isActive,
+        },
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error handling application GET request:", error);
+    return NextResponse.json(
+      { error: "Failed to retrieve application data" },
+      { status: 500 }
+    );
+  }
+}
+
 export const POST = handelApplication;
+
+export const GET = handelApplicationGet;
